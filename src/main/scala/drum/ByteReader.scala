@@ -15,3 +15,7 @@ class ByteReader(source: Seq[Byte], override val offset: Int = 0) extends Reader
     def lineContents = Integer.toHexString(first)
   }
 }
+
+object ByteReader {
+  implicit def seq2reader(source: Seq[Byte]): ByteReader = new ByteReader(source)
+}

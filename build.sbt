@@ -10,4 +10,6 @@ libraryDependencies ++= Seq(
   "org.specs2" %% "specs2-core" % "3.1" % "test"
 )
 
+scalacOptions ++= Seq("-feature", "-language:implicitConversions")
+
 scalacOptions in Test ++= Seq("-Yrangepos")

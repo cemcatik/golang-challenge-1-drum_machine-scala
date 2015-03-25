@@ -1,59 +1,30 @@
 package drum
 
 import java.io.File
-import java.nio.{ByteBuffer, ByteOrder}
 
+import drum.ByteReader._
 import drum.Decoder._
 import org.apache.commons.io.FileUtils
 
-import scala.util.parsing.combinator._
-
-class Decoder extends Parsers {
-  type Elem = Byte
-
-  def literal(s: String) = acceptSeq(s.getBytes).map(_.mkString) named s
-  val byte = Parser { in =>
-    if (in.atEnd) Failure("Reached end of input", in)
-    else Success(in.first, in.rest)
-  } named "byte"
-  val uint8 = byte ^^ (_ & 0xFF) named "uint8"
-  val int32 = repN(4, byte) ^^ (bs => ByteBuffer.wrap(bs.toArray).getInt)  named "int32"
-  val int64 = repN(8, byte) ^^ (bs => ByteBuffer.wrap(bs.toArray).getLong) named "int64"
-  def bytes(length: Int) = repN(length, byte) named s"byte[$length]"
-  def string(length: Int) = bytes(length) ^^ (bs => new String(bs.toArray, "US-ASCII")) named s"string[$length]"
-  val lstring = int32 >> (l => string(l)) named "lstring"
-  val floatL = bytes(4) ^^ (bs => ByteBuffer.wrap(bs.toArray).order(ByteOrder.LITTLE_ENDIAN).getFloat) named "floatL"
-
-  val envelope =
+class Decoder extends ByteParsers {
+  val envelope = (
     literal("SPLICE") ~>
     int64 >> (l => bytes(l.toInt))
+  ) named "envelope"
+
+  val instrument = uint8 ~ lstring ~ repN(16, boolean) ^^ {
+    case id ~ name ~ steps => Instrument(id, name, steps)
+  } named "instrument"
 
   val pattern = string(32) ~ floatL ~ instrument.* ^^ {
     case hwVersion ~ tempo ~ instruments => Pattern(hwVersion.trim, tempo, instruments)
-  }
-
-  val instrument = uint8 ~ lstring ~ bytes(16) ^^ {
-    case id ~ name ~ steps =>
-      val ss = steps map {
-        case 0 => false
-        case 1 => true
-      }
-      Instrument(id, name, ss)
-  }
-
-  case class RichParseResult[T](pr: ParseResult[T]) {
-    def flatMap[B](f: T => ParseResult[B]): ParseResult[B] = pr match {
-      case Success(result, _) => f(result)
-      case e: NoSuccess       => e
-    }
-  }
+  } named "pattern"
 
   def decodeFile(path: File): ParseResult[Pattern] = {
-    val f = FileUtils.readFileToByteArray(path)
-    val r = new ByteReader(f)
+    val f = FileUtils.readFileToByteArray(path).toSeq
     for {
-      env <- RichParseResult(envelope(r))
-      pat <- pattern(new ByteReader(env))
+      env <- envelope(f)
+      pat <- pattern(env)
     } yield pat
   }
 }
