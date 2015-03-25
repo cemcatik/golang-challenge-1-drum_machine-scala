@@ -26,6 +26,15 @@ class DecoderSpec extends Specification with Tables {
       |(5) cowbell	|----|----|x---|----|
       |""".stripMargin
 
+  val expected2MoreBells =
+    """Saved with HW Version: 0.808-alpha
+      |Tempo: 98.4
+      |(0) kick	|x---|----|x---|----|
+      |(1) snare	|----|x---|----|x---|
+      |(3) hh-open	|--x-|--x-|x-x-|--x-|
+      |(5) cowbell	|x---|x-x-|x---|x-x-|
+      |""".stripMargin
+
   val expected3 =
     """Saved with HW Version: 0.808-alpha
       |Tempo: 118
@@ -55,12 +64,13 @@ class DecoderSpec extends Specification with Tables {
 
   def is = s2"""
     drum.Decoder should decode splices as expected ${
-      "serialized file"  | "expected" |>
-      "pattern_1.splice" ! expected1  |
-      "pattern_2.splice" ! expected2  |
-      "pattern_3.splice" ! expected3  |
-      "pattern_4.splice" ! expected4  |
-      "pattern_5.splice" ! expected5  |
+      "serialized file"            | "expected"         |>
+      "pattern_1.splice"           ! expected1          |
+      "pattern_2.splice"           ! expected2          |
+      "pattern_2-morebells.splice" ! expected2MoreBells |
+      "pattern_3.splice"           ! expected3          |
+      "pattern_4.splice"           ! expected4          |
+      "pattern_5.splice"           ! expected5          |
         { (f, e) =>
           val path = new File("src/test/resources", f)
           new Decoder().decodeFile(path).get.toString must_== e
