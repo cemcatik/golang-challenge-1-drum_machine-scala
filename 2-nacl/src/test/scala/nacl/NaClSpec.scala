@@ -10,7 +10,7 @@ import org.apache.commons.io.IOUtils
 import org.specs2.mutable.{After, Specification}
 
 class NaClSpec extends Specification {
-  "nacl.Nacl" should {
+  "nacl.NaCl" should {
     "ReadWriterPing" in {
       val priv = Array.ofDim[Byte](32).initialize('p', 'r', 'i', 'v')
       val pub  = Array.ofDim[Byte](32).initialize('p', 'u', 'b')

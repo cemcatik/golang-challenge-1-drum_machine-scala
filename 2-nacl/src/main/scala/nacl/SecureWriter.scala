@@ -1,6 +1,7 @@
 package nacl
 
 import java.io.{Writer, OutputStream}
+import java.nio.ByteBuffer
 
 import org.abstractj.kalium.{NaCl => KNaCl}
 import org.abstractj.kalium.crypto.{Random, Box}
@@ -14,9 +15,14 @@ class SecureWriter(o: OutputStream, priv: Array[Byte], pub: Array[Byte]) extends
     val buf = cbuf.slice(off, off + len)
     val encrypted = box.encrypt(nonce, buf.mkString.getBytes)
     o.write(nonce)
-    o.write(encrypted.length)
+    writeInt(encrypted.length)
     o.write(encrypted)
     o.flush()
+  }
+
+  def writeInt(i: Int): Unit = {
+    val bs = ByteBuffer.allocate(4).putInt(i).array()
+    o.write(bs)
   }
 
   def flush(): Unit = o.flush()

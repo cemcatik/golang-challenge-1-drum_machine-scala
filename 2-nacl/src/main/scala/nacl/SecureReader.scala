@@ -1,6 +1,7 @@
 package nacl
 
 import java.io.{Reader, InputStream}
+import java.nio.ByteBuffer
 
 import org.abstractj.kalium.{NaCl => KNaCl}
 import org.abstractj.kalium.crypto.Box
@@ -13,7 +14,7 @@ class SecureReader(i: InputStream,  priv: Array[Byte], pub: Array[Byte]) extends
       -1
     } else {
       val nonce = i.read(KNaCl.Sodium.NONCE_BYTES)
-      val wLen  = i.read()
+      val wLen  = readInt
       val msg   = i.read(wLen)
       val decrypted = new String(box.decrypt(nonce, msg))
       decrypted.zipWithIndex.foreach {
@@ -21,6 +22,11 @@ class SecureReader(i: InputStream,  priv: Array[Byte], pub: Array[Byte]) extends
       }
       decrypted.length
     }
+  }
+
+  def readInt: Int = {
+    val bs = i.read(4)
+    ByteBuffer.wrap(bs).getInt
   }
 
   def close(): Unit = i.close()
