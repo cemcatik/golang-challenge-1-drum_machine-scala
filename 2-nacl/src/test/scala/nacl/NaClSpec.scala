@@ -1,11 +1,13 @@
 package nacl
 
 import java.io._
+import java.net.ServerSocket
+import java.util.concurrent.CountDownLatch
 
 import nacl.NaClSpec._
 import org.apache.commons.io.IOUtils
 
-import org.specs2.mutable.Specification
+import org.specs2.mutable.{After, Specification}
 
 class NaClSpec extends Specification {
   "nacl.Nacl" should {
@@ -60,16 +62,49 @@ class NaClSpec extends Specification {
       buf must_!= buf2
     }
 
-    "SecureEchoServer" in {
-      pending
+    "SecureEchoServer" in new WithServerSocket {
+      Thread { Serve(ss) }
+
+      val conn = Dial(ss.getInetAddress, ss.getLocalPort)
+      val expected = "hello world\n"
+      conn.write(expected.getBytes)
+
+      val buf = conn.read()
+      conn.close()
+      val got = new String(buf)
+      got must_== expected
     }
 
-    "SecureServe" in {
-      pending
+    "SecureServe" in new WithServerSocket {
+      Thread { Serve(ss) }
+
+      val conn = RawDial(ss.getInetAddress, ss.getLocalPort)
+      val unexpected = "hello world\n"
+      conn.write(unexpected.getBytes)
+
+      val buf = conn.read()
+      conn.close()
+      val got = new String(buf)
+      got must_!= unexpected
     }
 
-    "SecureDial" in {
-      pending
+    "SecureDial" in new WithServerSocket {
+      val latch = new CountDownLatch(1)
+      Thread {
+        latch.await()
+        val conn = Dial(ss.getInetAddress, ss.getLocalPort)
+        conn.write("hello world\n".getBytes)
+      }
+
+      latch.countDown()
+      val s = ss.accept()
+      val sIn  = s.getInputStream
+      val sOut = s.getOutputStream
+      val key = Array.ofDim[Byte](32).initialize('p', 'u', 'b')
+      sOut.write(key)
+      sOut.flush()
+      val got = sIn.read(2048)
+      new String(got) must_!= "hello world\n"
     }
   }
 }
@@ -88,5 +123,10 @@ object NaClSpec {
     val r = new PipedInputStream()
     val w = new PipedOutputStream(r)
     (r, w)
+  }
+
+  trait WithServerSocket extends After {
+    val ss = new ServerSocket(0)
+    def after = ss.close()
   }
 }

@@ -16,6 +16,7 @@ class SecureWriter(o: OutputStream, priv: Array[Byte], pub: Array[Byte]) extends
     o.write(nonce)
     o.write(encrypted.length)
     o.write(encrypted)
+    o.flush()
   }
 
   def flush(): Unit = o.flush()

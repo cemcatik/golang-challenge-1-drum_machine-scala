@@ -3,7 +3,10 @@ name := "golang-challenge-scala"
 val commonSettings = Seq(
   version := "1.0",
   scalaVersion := "2.11.6",
-  scalacOptions ++= Seq("-feature", "-language:implicitConversions"),
+  scalacOptions ++= Seq(
+    "-feature",
+    "-language:implicitConversions"
+  ),
   scalacOptions in Test ++= Seq("-Yrangepos"),
   resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases",
   fork in Test := true
