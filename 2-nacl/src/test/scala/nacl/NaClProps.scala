@@ -1,11 +1,10 @@
 package nacl
 
-import org.abstractj.kalium.crypto.{Random, Box}
-import org.abstractj.kalium.encoders.{Hex, Encoder}
-import org.abstractj.kalium.keys.{KeyPair, PublicKey, PrivateKey}
+import nacl.NaClProps._
+import org.abstractj.kalium.keys._
 import org.apache.commons.io.IOUtils
+import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary._
-import org.scalacheck.{Arbitrary, Gen}
 import org.scalacheck.Gen._
 import org.specs2.ScalaCheck
 import org.specs2.mutable.Specification
@@ -13,12 +12,6 @@ import org.specs2.mutable.Specification
 class NaClProps extends Specification with ScalaCheck {
   "nacl.NaCl Props" should {
     "ReadWriterPing - roundtrip" in {
-      // might want to do this so the key pair is also reported on failure
-      implicit val arbKeyPair = Arbitrary {
-        val keyPair = new KeyPair()
-        (keyPair.getPrivateKey, keyPair.getPublicKey)
-      }
-
       prop { (keyPair: (PrivateKey, PublicKey), message: String) =>
         val priv = keyPair._1.toBytes
         val pub  = keyPair._2.toBytes
@@ -69,5 +62,65 @@ class NaClProps extends Specification with ScalaCheck {
       val read = IOUtils.toString(secureR)
       read must_== ""
     }
+
+    "SecureWriter - Make sure we don't read the plain text message" in {
+      prop { (keyPair: (PrivateKey, PublicKey), message: String) =>
+        val priv = keyPair._1.toBytes
+        val pub  = keyPair._2.toBytes
+
+        val (r, w) = NaClSpec.Pipe
+
+        val secureR = SecureReader(r, priv, pub)
+        val secureW = SecureWriter(w, priv, pub)
+
+        secureW.write(message)
+        secureW.close()
+
+        // Read from the underlying transport instead of the decoder
+        // Make sure we don't read the plain text message.
+        val buf = IOUtils.toString(r)
+        buf != message
+      }
+    }
+
+    "SecureWriter - Make sure unique" in {
+      prop { (keyPair: (PrivateKey, PublicKey), message: String) =>
+        val priv = keyPair._1.toBytes
+        val pub = keyPair._2.toBytes
+
+        val (r, w) = NaClSpec.Pipe
+
+        val secureR = SecureReader(r, priv, pub)
+        val secureW = SecureWriter(w, priv, pub)
+
+        secureW.write(message)
+        secureW.close()
+
+        // Read from the underlying transport instead of the decoder
+        // Make sure we don't read the plain text message.
+        val buf = IOUtils.toString(r)
+
+        val (r2, w2) = NaClSpec.Pipe
+        val secureW2 = SecureWriter(w2, priv, pub)
+
+        // Make sure we are unique
+        // Encrypt hello world
+        secureW2.write("hello world\n")
+        secureW2.close()
+
+        // Read from the underlying transport instead of the decoder
+        // Make sure the encrypted message is unique.
+        val buf2 = IOUtils.toString(r2)
+        buf != buf2
+      }
+    }
+  }
+}
+
+object NaClProps {
+  // might want to do this so the key pair is also reported on failure
+  implicit val arbKeyPair: Arbitrary[(PrivateKey, PublicKey)] = Arbitrary {
+    val keyPair = new KeyPair()
+    (keyPair.getPrivateKey, keyPair.getPublicKey)
   }
 }
