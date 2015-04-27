@@ -33,6 +33,7 @@ lazy val challenge2 = (challenge("2-nacl")).
     libraryDependencies ++= Seq(
       "org.abstractj.kalium" % "kalium" % "0.3.0",
       "commons-io" % "commons-io" % "2.4",
+      "com.github.scopt" %% "scopt" % "3.3.0",
       "org.specs2" %% "specs2-core"       % "3.5" % "test",
       "org.specs2" %% "specs2-scalacheck" % "3.5" % "test"
     )
