@@ -24,7 +24,7 @@ lazy val challenge1 = (challenge("1-drum_machine")).
     libraryDependencies ++= Seq(
       "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.3",
       "commons-io" % "commons-io" % "2.4",
-      "org.specs2" %% "specs2-core" % "3.5" % "test"
+      "org.specs2" %% "specs2-core" % "3.6" % "test"
     )
   )
 
@@ -34,7 +34,7 @@ lazy val challenge2 = (challenge("2-nacl")).
       "org.abstractj.kalium" % "kalium" % "0.3.0",
       "commons-io" % "commons-io" % "2.4",
       "com.github.scopt" %% "scopt" % "3.3.0",
-      "org.specs2" %% "specs2-core"       % "3.5" % "test",
-      "org.specs2" %% "specs2-scalacheck" % "3.5" % "test"
+      "org.specs2" %% "specs2-core"       % "3.6" % "test",
+      "org.specs2" %% "specs2-scalacheck" % "3.6" % "test"
     )
   )
